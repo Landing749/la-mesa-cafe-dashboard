@@ -1,0 +1,47 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #fffaf6;
+  margin: 0;
+  padding: 0;
+  color: #2b2b2b;
+}
+
+header {
+  background: #7b3f00;
+  color: #fff;
+  padding: 16px 24px;
+  text-align: center;
+}
+
+header p {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+main {
+  padding: 24px;
+}
+
+#ordersList {
+  list-style: none;
+  padding: 0;
+}
+
+#ordersList li {
+  background: #fff;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+#ordersList li strong {
+  font-size: 16px;
+}
+
+#ordersList li div {
+  font-size: 14px;
+  margin-top: 4px;
+  color: #6b5750;
+}
