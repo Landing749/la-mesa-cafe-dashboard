@@ -1,29 +1,30 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>La Mesa Cafe — Admin Orders</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>La Mesa Cafe — Admin Panel</title>
   <style>
-    body{font-family:Arial,sans-serif;background:#fffaf6;margin:0;padding:20px;color:#2b2b2b;}
-    h1{color:#7b3f00;}
-    .order{background:#fff;padding:16px;margin-bottom:12px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
-    .order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-    .items{margin-left:16px;}
-    .item{display:flex;justify-content:space-between;margin-bottom:4px;}
-    .timestamp{font-size:12px;color:#6b5750;}
+    body { font-family: Arial, sans-serif; background: #fffaf6; margin:0; padding:20px; }
+    h1 { color: #7b3f00; }
+    .order-card { background: #fff; padding:16px; margin-bottom:12px; border-radius:10px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+    .order-header { display:flex; justify-content:space-between; align-items:center; }
+    .btn { padding:6px 12px; border:none; border-radius:8px; cursor:pointer; font-weight:700; }
+    .complete { background: #4CAF50; color:#fff; margin-left:6px; }
+    .delete { background: #f44336; color:#fff; margin-left:6px; }
+    .items { margin-top:8px; }
+    .item { display:flex; justify-content:space-between; padding:4px 0; }
   </style>
 </head>
 <body>
-  <h1>Admin Orders Panel</h1>
-  <div id="ordersContainer">Loading orders...</div>
+  <h1>La Mesa Cafe — Orders Panel</h1>
+  <div id="ordersContainer"></div>
 
   <script type="module">
-    // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+    import { getDatabase, ref, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-    // Firebase config (same as main page)
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyC7QVhaR95hO_dUYcP7dJ__2DW0blpMKFI",
       authDomain: "la-mesa-cafe-system.firebaseapp.com",
@@ -35,45 +36,58 @@
       measurementId: "G-9CL7KJTYVB"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const ordersRef = ref(db, 'orders');
 
     const ordersContainer = document.getElementById('ordersContainer');
 
-    function renderOrders(data) {
+    function renderOrders(ordersObj){
       ordersContainer.innerHTML = '';
-      if (!data) {
-        ordersContainer.innerHTML = '<p>No orders yet.</p>';
-        return;
-      }
-      Object.entries(data).forEach(([orderId, order]) => {
-        const div = document.createElement('div');
-        div.className = 'order';
+      if(!ordersObj) return;
 
-        const timestamp = new Date(order.timestamp).toLocaleString();
-
-        div.innerHTML = `
+      Object.entries(ordersObj).forEach(([id, order]) => {
+        const card = document.createElement('div');
+        card.className = 'order-card';
+        card.innerHTML = `
           <div class="order-header">
-            <strong>Customer: ${order.customer || 'Unknown Customer'}</strong>
-            <span class="timestamp">${timestamp}</span>
+            <div><strong>${order.customer || 'Unknown Customer'}</strong> - ₱${order.total}</div>
+            <div>
+              <button class="btn complete">✅ Complete</button>
+              <button class="btn delete">🗑 Delete</button>
+            </div>
           </div>
           <div class="items">
-            ${order.items.map(i => `<div class="item"><span>${i.name} × ${i.qty}</span><span>₱${i.price * i.qty}</span></div>`).join('')}
+            ${order.items.map(i => `<div class="item">${i.name} × ${i.qty} <span>₱${i.price * i.qty}</span></div>`).join('')}
           </div>
-          <div style="margin-top:8px;"><strong>Total:</strong> ₱${order.total}</div>
-          <div><strong>Note:</strong> ${order.note || '-'}</div>
+          <div class="note" style="margin-top:6px; font-size:13px; color:#555;">Note: ${order.note || '-'}</div>
         `;
-        ordersContainer.appendChild(div);
+        ordersContainer.appendChild(card);
+
+        // Buttons
+        const completeBtn = card.querySelector('.complete');
+        const deleteBtn = card.querySelector('.delete');
+
+        completeBtn.onclick = () => {
+          update(ref(db, 'orders/' + id), { completed: true })
+            .then(() => alert('Order marked as completed'))
+            .catch(err => alert('Error: ' + err));
+        };
+
+        deleteBtn.onclick = () => {
+          if(confirm('Delete this order?')) {
+            remove(ref(db, 'orders/' + id))
+              .then(() => alert('Order deleted'))
+              .catch(err => alert('Error: ' + err));
+          }
+        };
       });
     }
 
-    // Listen to orders in realtime
-    const ordersRef = ref(db, 'orders');
-    onValue(ordersRef, snapshot => {
+    // Real-time listener
+    onValue(ordersRef, (snapshot) => {
       renderOrders(snapshot.val());
     });
-
   </script>
 </body>
 </html>
