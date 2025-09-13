@@ -1,24 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Café Admin Panel</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Café San Gregoryo — Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#fffaf6; color:#2b2b2b; padding:20px; }
+    h1 { color:#7b3f00; }
+    ul { list-style:none; padding:0; }
+    li { background:#fff; border-radius:10px; padding:16px; margin-bottom:12px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+    button { padding:6px 10px; border:none; border-radius:6px; cursor:pointer; background:#dba15a; color:#fff; font-weight:700; }
+    button:hover { background:#7b3f00; }
+    .items { margin:8px 0; font-size:14px; color:#6b5750; }
+    .note { font-size:13px; color:#8a6f63; }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Café San Gregoryo — Admin Panel</h1>
-    <p>Realtime Orders Dashboard</p>
-  </header>
 
-  <main>
-    <section id="ordersContainer">
-      <h2>Orders</h2>
-      <ul id="ordersList"></ul>
-    </section>
-  </main>
+  <h1>Café San Gregoryo Admin Panel</h1>
+  <p>Realtime orders from customers:</p>
+  <ul id="ordersList">
+    <li>Loading orders...</li>
+  </ul>
 
-  <script type="module" src="app.js"></script>
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.2.0/firebase-app.js";
+    import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.2.0/firebase-database.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyC7QVhaR95hO_dUYcP7dJ__2DW0blpMKFI",
+      authDomain: "la-mesa-cafe-system.firebaseapp.com",
+      databaseURL: "https://la-mesa-cafe-system-default-rtdb.firebaseio.com",
+      projectId: "la-mesa-cafe-system",
+      storageBucket: "la-mesa-cafe-system.appspot.com",
+      messagingSenderId: "234244615396",
+      appId: "1:234244615396:web:87725489a3f70fbbabd0f1",
+      measurementId: "G-9CL7KJTYVB"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const ordersRef = ref(db, 'orders');
+    const ordersList = document.getElementById('ordersList');
+
+    // Realtime listener
+    onValue(ordersRef, (snapshot) => {
+      const data = snapshot.val();
+      ordersList.innerHTML = '';
+
+      if(data) {
+        Object.entries(data).forEach(([key, order]) => {
+          const orderName = order.name || "Unknown Customer";
+          const orderTotal = order.total || 0;
+          const orderItems = order.items ? order.items.map(i => `${i.name} x${i.qty}`).join(', ') : '—';
+          const orderNote = order.note || '—';
+
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <strong>${orderName}</strong> - Total: ₱${orderTotal}
+            <div class="items">Items: ${orderItems}</div>
+            <div class="note">Note: ${orderNote}</div>
+            <button onclick="markCompleted('${key}')">Mark as Completed</button>
+          `;
+          ordersList.appendChild(li);
+        });
+      } else {
+        ordersList.innerHTML = '<li>No orders yet</li>';
+      }
+    });
+
+    // Function to remove order
+    window.markCompleted = function(key) {
+      if(confirm("Mark this order as completed?")) {
+        remove(ref(db, `orders/${key}`));
+      }
+    };
+  </script>
+
 </body>
 </html>
