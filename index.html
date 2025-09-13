@@ -7,24 +7,28 @@
   <style>
     body { font-family: Arial, sans-serif; background: #fffaf6; margin:0; padding:20px; }
     h1 { color: #7b3f00; }
-    .order-card { background: #fff; padding:16px; margin-bottom:12px; border-radius:10px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+    .order-card { background: #fff; padding:16px; margin-bottom:12px; border-radius:10px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); transition: 0.2s; }
+    .order-card.completed { background: #e6f9e6; opacity: 0.8; }
     .order-header { display:flex; justify-content:space-between; align-items:center; }
     .btn { padding:6px 12px; border:none; border-radius:8px; cursor:pointer; font-weight:700; }
     .complete { background: #4CAF50; color:#fff; margin-left:6px; }
     .delete { background: #f44336; color:#fff; margin-left:6px; }
     .items { margin-top:8px; }
     .item { display:flex; justify-content:space-between; padding:4px 0; }
+    .toggle-completed { margin-bottom:12px; }
   </style>
 </head>
 <body>
   <h1>La Mesa Cafe — Orders Panel</h1>
+  <label class="toggle-completed">
+    <input type="checkbox" id="hideCompleted"> Hide completed orders
+  </label>
   <div id="ordersContainer"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getDatabase, ref, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyC7QVhaR95hO_dUYcP7dJ__2DW0blpMKFI",
       authDomain: "la-mesa-cafe-system.firebaseapp.com",
@@ -41,19 +45,23 @@
     const ordersRef = ref(db, 'orders');
 
     const ordersContainer = document.getElementById('ordersContainer');
+    const hideCompletedCheckbox = document.getElementById('hideCompleted');
 
     function renderOrders(ordersObj){
       ordersContainer.innerHTML = '';
       if(!ordersObj) return;
 
       Object.entries(ordersObj).forEach(([id, order]) => {
+        const completed = order.completed || false;
+        if(hideCompletedCheckbox.checked && completed) return;
+
         const card = document.createElement('div');
-        card.className = 'order-card';
+        card.className = 'order-card' + (completed ? ' completed' : '');
         card.innerHTML = `
           <div class="order-header">
             <div><strong>${order.customer || 'Unknown Customer'}</strong> - ₱${order.total}</div>
             <div>
-              <button class="btn complete">✅ Complete</button>
+              <button class="btn complete" ${completed ? 'disabled' : ''}>✅ Complete</button>
               <button class="btn delete">🗑 Delete</button>
             </div>
           </div>
@@ -64,7 +72,6 @@
         `;
         ordersContainer.appendChild(card);
 
-        // Buttons
         const completeBtn = card.querySelector('.complete');
         const deleteBtn = card.querySelector('.delete');
 
@@ -84,9 +91,14 @@
       });
     }
 
-    // Real-time listener
-    onValue(ordersRef, (snapshot) => {
+    onValue(ordersRef, snapshot => {
       renderOrders(snapshot.val());
+    });
+
+    hideCompletedCheckbox.addEventListener('change', () => {
+      onValue(ordersRef, snapshot => {
+        renderOrders(snapshot.val());
+      });
     });
   </script>
 </body>
